@@ -1,3 +1,6 @@
+require("dotenv").config();
+const mysql = require("mysql2/promise");
+
 const movies = [
   {
     id: 1,
@@ -25,23 +28,61 @@ const movies = [
   },
 ];
 
+const database = mysql.createPool({
+  host: process.env.DB_HOST, // address of the server
+  port: process.env.DB_PORT, // port of the DB server (mysql), not to be confused with the APP_PORT !
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+});
+
 const getMovies = (req, res) => {
-  res.json(movies);
+  database
+    .query("select * from movies")
+    .then(([movies]) => {
+      res.json(movies); // use res.json instead of console.log
+    })
+    .catch((err) => {
+      console.error(err);
+      res.sendStatus(500);
+    });
 };
 
 const getMovieById = (req, res) => {
   const id = parseInt(req.params.id);
+  database
+    .query("select * from movies where id = ?", [id])
+    .then(([movies]) => {
+      if (movies[0] != null) {
+        res.json(movies[0]);
+      } else {
+        res.sendStatus(404);
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+      res.sendStatus(500);
+    });
+};
 
-  const movie = movies.find((movie) => movie.id === id);
+const getUsers = (req, res) => {
+  res.status(200).json(movies);
+};
 
-  if (movie != null) {
-    res.json(movie);
+const getUsersById = (req, res) => {
+   const userId = parseInt(req.params.id);
+  const user = movies.find((user) => user.id === userId);
+
+  if (user) {
+    res.status(200).json(user);
   } else {
-    res.status(404).send("Not Found");
+    res.status(404).json({ error: 'Utilisateur non trouvé' });
   }
 };
 
 module.exports = {
   getMovies,
   getMovieById,
+  getUsers,
+  getUsersById,
 };
