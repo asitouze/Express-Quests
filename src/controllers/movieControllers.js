@@ -70,16 +70,15 @@ const getUsers = (req, res) => {
 };
 
 const getUsersById = (req, res) => {
-   const userId = parseInt(req.params.id);
+  const userId = parseInt(req.params.id);
   const user = movies.find((user) => user.id === userId);
 
   if (user) {
     res.status(200).json(user);
   } else {
-    res.status(404).json({ error: 'Utilisateur non trouvé' });
+    res.status(404).json({ error: "Utilisateur non trouvé" });
   }
 };
-
 
 const postMovie = (req, res) => {
   const { title, director, year, color, duration } = req.body;
@@ -99,7 +98,7 @@ const postMovie = (req, res) => {
 };
 
 const postUsers = (req, res) => {
-   const { title, director, year, color, duration } = req.body;
+  const { title, director, year, color, duration } = req.body;
 
   database
     .query(
@@ -122,7 +121,7 @@ const postUsers = (req, res) => {
       console.error(err);
       res.sendStatus(500);
     });
-}
+};
 
 const updateMovie = (req, res) => {
   const id = parseInt(req.params.id);
@@ -166,7 +165,25 @@ const updateUsers = (req, res) => {
       console.error(err);
       res.sendStatus(500);
     });
-}
+};
+
+const deleteUsers = (req, res) => {
+  const id = parseInt(req.params.id);
+
+  database
+    .query("delete from users where id = ?", [id])
+    .then(([result]) => {
+      if (result.affectedRows === 0) {
+        res.sendStatus(404);
+      } else {
+        res.sendStatus(204);
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+      res.sendStatus(500);
+    });
+};
 
 module.exports = {
   getMovies,
@@ -177,4 +194,5 @@ module.exports = {
   getUsersById,
   updateMovie,
   updateUsers,
+  deleteUsers,
 };
