@@ -36,18 +36,69 @@ const database = mysql.createPool({
   database: process.env.DB_NAME,
 });
 
+// const getMovies = (req, res) => {
+//   let sql = "select * from movies";
+//   const sqlValues = [];
+
+//   if (req.query.color != null) {
+//     sql += " where color = ?";
+//     sqlValues.push(req.query.color);
+//   }
+//   if (req.query.max_duration != null) {
+//     sql += " where duration <= ?";
+//     sqlValues.push(req.query.max_duration);
+//   } else if (req.query.max_duration != null) {
+//     sql += " where duration <= ?";
+//     sqlValues.push(req.query.max_duration);
+//   }
+
+//   database
+//     .query("select * from movies")
+//     .then(([movies]) => {
+//       res.json(movies); // use res.json instead of console.log
+//     })
+//     .catch((err) => {
+//       console.error(err);
+//       res.sendStatus(500);
+//     });
+// };
+
 const getMovies = (req, res) => {
+  const initialSql = "select * from movies";
+  const where = [];
+
+  if (req.query.color != null) {
+    where.push({
+      column: "color",
+      value: req.query.color,
+      operator: "=",
+    });
+  }
+  if (req.query.max_duration != null) {
+    where.push({
+      column: "duration",
+      value: req.query.max_duration,
+      operator: "<=",
+    });
+  }
+
   database
-    .query("select * from movies")
+    .query(
+      where.reduce(
+        (sql, { column, operator }, index) =>
+          `${sql} ${index === 0 ? "where" : "and"} ${column} ${operator} ?`,
+        initialSql
+      ),
+      where.map(({ value }) => value)
+    )
     .then(([movies]) => {
-      res.json(movies); // use res.json instead of console.log
+      res.json(movies);
     })
     .catch((err) => {
       console.error(err);
-      res.sendStatus(500);
+      res.status(500).send("Error retrieving data from database");
     });
 };
-
 const getMovieById = (req, res) => {
   const id = parseInt(req.params.id);
   database
@@ -66,7 +117,24 @@ const getMovieById = (req, res) => {
 };
 
 const getUsers = (req, res) => {
-  res.status(200).json(movies);
+  if (movies) {
+    const language = req.query.language;
+    let filteredUsers = movies;
+    if (language) {
+      filteredUsers = movies.filter((user) => {
+        user.language.toLowerCase() === language.toLowerCase();
+      });
+    }
+    const city = req.query.city;
+    if (city) {
+      filteredUsers = filteredUsers.filter((user) => {
+        user.city.toLowerCase() === city.toLowerCase();
+      });
+    }
+    res.status(200).json(filteredUsers);
+  } else {
+    res.status(404).json({ error: "Utilisateur non trouvé" });
+  }
 };
 
 const getUsersById = (req, res) => {
@@ -148,7 +216,6 @@ const updateMovie = (req, res) => {
 const updateUsers = (req, res) => {
   const id = parseInt(req.params.id);
   const { title, director, year, color, duration } = req.body;
-
   database
     .query(
       "UPDATE movies SET title = ?, director = ?, year = ?, color = ?, duration = ? WHERE id = ?",
