@@ -7,6 +7,6 @@ const router = express.Router();
 // router.get("/api/movies/:id", movieControllers.getMovieById);
 router.get("/api/users", userControllers.getAllUsers);
 router.post("/api/users", hashPassword, userControllers.postUser);
-router.put("/api/users/:id", hashPassword, userControllers.updateUser);
+router.put("/api/users/:id", hashPassword, userControllers.putUser);
 
 module.exports = router;
